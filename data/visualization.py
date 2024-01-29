@@ -1,12 +1,12 @@
 import os
 import cv2
 import numpy as np
-folder_path_FG = "C:\prdue\job_preperation_general\support_company\project\MPIIFaceGaze"
-folder_path_G = "C:\prdue\job_preperation_general\support_company\project\MPIIGaze\MPIIGaze\Annotation Subset"
+folder_path_FG = "/Users/shuangliu/Downloads/data/MPIIFaceGaze"
+folder_path_G = "/Users/shuangliu/Downloads/data/MPIIGaze\Annotation Subset"
 #保存annotation 地址：
-save_file_path = "C:\prdue\job_preperation_general\support_company\project\MPIIFaceGaze"
-save_file_name = "annotationOverall.txt"
-save_file_path_FG = os.path.join(save_file_path,save_file_name)
+# save_file_path = "C:\prdue\job_preperation_general\support_company\project\MPIIFaceGaze"
+# save_file_name = "annotationOverall.txt"
+save_file_path_FG = "/MPIIFaceGaze/annotationOverall.txt"
 '''
 #遍历Gaze
 for i in range(15):
@@ -80,9 +80,13 @@ for w in range(15):
             x, y = point_pair
             #print(type(x),type(y))
             cv2.circle(image, (int(x), int(y)), 5, (0, 255, 0), -1)
-        new_plt_dir = line_list_FG_plt[0]+"_new.jpg"
-        output_image_path = os.path.join(folder_path_FG,new_plt_dir)
-        cv2.imwrite(output_image_path,image)
+        # new_plt_dir = line_list_FG_plt[0]+"_new.jpg"
+        # output_image_path = os.path.join(folder_path_FG,new_plt_dir)
+        # cv2.imwrite(output_image_path,image)
+        cv2.imshow("", image)
+        key = cv2.waitKey(-1)
+        if key == ord("q"):
+            break
 
 
         #cv2.imshow("Original Image", cv2.imread(plot_dir))
