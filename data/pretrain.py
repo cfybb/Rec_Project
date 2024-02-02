@@ -8,7 +8,6 @@ from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import os
 from data_utils import data_augmentation
@@ -19,8 +18,8 @@ sigma = 4 # sigma parameter for quadratic gaussian distribution heatmap
 class CustomDataset(Dataset):
     def __init__(self):
         # initialize
-        self.data_paths = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze/annotationOverall.txt"
-        self.folder_path = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze"
+        self.data_paths = "/Users/shuangliu/PycharmProjects/Rec_Project/MPIIFaceGaze/annotationOverall.txt"
+        self.folder_path = "/Users/shuangliu/Downloads/data/MPIIFaceGaze"
         self.data = self.read_txt(self.data_paths)
 
     def __len__(self):
@@ -35,6 +34,10 @@ class CustomDataset(Dataset):
         image = self.load_image(image_id_path)
         keypoints = [float(coord) for coord in keypoints.split()]
 
+        # data augmentation
+        image, keypoints = data_augmentation(
+            image, keypoints, options=['rescaling', 'rotate']
+        )  # only do two, just in case.
         # return
         return image, keypoints
 
@@ -75,9 +78,6 @@ def collate_fn(batch):
     #image, label
     images, labels = zip(*batch)
     #print(size(images),size(labels))
-
-    #data augmentation
-    images, labels = data_augmentation(images, labels,options = ['rescaling','shifting']) #only do two, just in case.
 
     images = torch.FloatTensor(np.array(images, dtype=np.float32))
     images = torch.permute(images, (0, 3, 1, 2))

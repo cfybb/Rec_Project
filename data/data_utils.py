@@ -2,9 +2,47 @@ import numpy as np
 import random
 import copy
 
+import cv2
 
 
-def rescale(images, labels):
+# Data Augmentation HyperParams
+RESCALE_MAX = 1.2
+RESCALE_MIN = 0.8
+
+
+def rescale(image, label):
+    orig_shape = (image.shape[1], image.shape[0])  # (width, height)
+    rescale_factor = random.uniform(RESCALE_MIN, RESCALE_MAX)
+
+    # resize
+    image = cv2.resize(image, None, fx=rescale_factor, fy=rescale_factor)
+    label = [(c * rescale_factor if c != -1 else c) for c in label]
+
+    # center padding
+    if rescale_factor < 1:
+        pass
+
+    # center cropping
+    if rescale_factor > 1:
+        new_center = (image.shape[1] // 2, image.shape[0] // 2)
+        crop_tl = np.array(
+            (image.shape[1] // 2 - orig_shape[0] // 2,
+             image.shape[0] // 2 - orig_shape[1] // 2)
+        )
+        image = image[
+                crop_tl[1]:(crop_tl[1] + orig_shape[1]),
+                crop_tl[0]:(crop_tl[0] + orig_shape[0])
+        ]
+        # adjust label
+        label = np.array(label).reshape(-1, 2)
+        label = np.array([(xy - crop_tl) if xy[0] != -1 else xy for xy in label])
+        # check if new label is in the image
+        label = np.array([xy if xy[0] >= 0 and xy[0] < orig_shape[1] and xy[1] >= 0 and xy[1] < orig_shape[1] else [-1, -1] for xy in label])
+
+    label = label.reshape(-1)
+    return image, label
+
+    """
     max_scale_length = 80
     # randomly rescale the image and return the augmented images + labels
     #raise NotImplemented
@@ -35,6 +73,7 @@ def rescale(images, labels):
         padded_matrix[:pooled_matrix.shape[0], :pooled_matrix.shape[1]] = pooled_matrix
         return_images[j] = padded_matrix
     return return_images, return_labels
+    """
 
 
 
@@ -145,7 +184,7 @@ def random_Noise(images,labels):
 
 
 
-def data_augmentation(images, labels, options=["rescaling", "shifting", "rotation", "saturation", "random noise"]):
+def data_augmentation(image, label, options=["rescaling", "shifting", "rotation", "saturation", "random noise"]):
     """
     Data Augmentation Main Function. Augmentations can be chosen from:
     - Rescaling
@@ -158,12 +197,12 @@ def data_augmentation(images, labels, options=["rescaling", "shifting", "rotatio
     for augment_option in options:
         assert augment_option in ["rescaling", "shifting", "rotation", "saturation", "random noise"]
         if augment_option == "rescaling":
-            images, labels = rescale(images, labels)
+            image, label = rescale(image, label)
         elif augment_option == "shifting":
-            images, labels = shift(images, labels)
+            image, label = shift(image, label)
         elif augment_option == "rotation":
-            images, labels = rotate(images, labels)
+            image, label = rotate(image, label)
         elif augment_option == "saturation":
-            images, labels = saturation(images, labels)
+            image, label = saturation(image, label)
         elif augment_option == "random noise":
-            images, labels = random_Noise(images, labels)
+            image, label = random_Noise(image, label)
