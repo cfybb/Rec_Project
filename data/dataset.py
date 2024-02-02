@@ -37,6 +37,12 @@ class CustomDataset(Dataset):
         image = self.load_image(image_id_path)
         keypoints = [float(coord) for coord in keypoints.split()]
 
+        # Data Augmentation
+        image, keypoints = data_augmentation(
+            image, keypoints,
+            options=["rescaling"]
+        )
+
         # 返回图像和关键点坐标
         return image, keypoints
 
@@ -74,9 +80,6 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
 
 def collate_fn(batch):
     images, labels = zip(*batch)
-
-    # Data Augmentation
-    images, labels = data_augmentation(images, labels)
 
     # images = [item['image'] for item in batch]
     # labels = [item['label'] for item in batch]
