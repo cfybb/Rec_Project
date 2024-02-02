@@ -32,7 +32,7 @@ class CustomDataset(Dataset):
         line = self.data[idx]
         image_path, keypoints = line.split(' ', 1)
         image_id_path = os.path.join(self.folder_path,image_path)
-        image = self.load_image(image_path)
+        image = self.load_image(image_id_path)
         keypoints = [float(coord) for coord in keypoints.split()]
 
         # return
@@ -48,13 +48,13 @@ class CustomDataset(Dataset):
     def read_txt(self,txt_path):
         with open(txt_path, 'r') as file:
             data = file.readlines()
-        return data
+        return data[1:]    #first line is empty
 
-def generate_gaussian_heatmap(x, y, iamge_shape, scale_factor, sigma=1.0):
+def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     """
     gaussian heatmap
     """
-    heatmap_size = (iamge_shape[0]//scale_factor,image_shape[1]//scale_factor)
+    heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
     x, y = int(x//scale_factor), int(y//scale_factor)
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
@@ -103,7 +103,7 @@ def collate_fn(batch):
             else:
                 mask_per_sample.append(1)
                 # generate heatmap
-                heatmap = generate_gaussian_heatmap(x, y,iamge_shape = image_shape,scale_factor = scale_factor)
+                heatmap = generate_gaussian_heatmap(x, y,image_shape = image_shape,scale_factor = scale_factor)
                 heatmap_per_sample.append(heatmap)
 
         heatmaps.append(heatmap_per_sample)
@@ -119,6 +119,7 @@ def collate_fn(batch):
 #validation check
 if __name__ == "__main__":
     dataset = CustomDataset()
+    print(dataset[0])
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=collate_fn)
     for batch in dataloader:
         image = batch["images"][0].permute(1, 2, 0).numpy().astype(np.uint8)
