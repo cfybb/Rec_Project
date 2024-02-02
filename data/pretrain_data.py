@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 folder_path_FG = "C:\prdue\job_preperation_general\support_company\project\MPIIFaceGaze"
 folder_path_G = "C:\prdue\job_preperation_general\support_company\project\MPIIGaze\MPIIGaze\Annotation Subset"
-#保存annotation 地址：
+#save annotation address：
 save_file_path = "C:\prdue\job_preperation_general\support_company\project\MPIIFaceGaze"
 save_file_name = "annotationOverall.txt"
 save_file_path_FG = os.path.join(save_file_path,save_file_name)
@@ -22,16 +22,16 @@ for i in range(15):
 
 
 
-    #遍历FG
+    #go through FG
     for p in range(len(lines_FG_all)):
-        #print("下一个文件")
+        #print("next")
         check = 0
         for k in range(len(lines_all)):
 
-            #这个是对应Pxx txt文件中的每行
+            #each Pxx txt file read by line
 
             line_list = lines_all[k].split()
-            #print(lines_all) #确定输出正确
+            #print(lines_all) #have a look
             line_list_pre_FG = lines_FG_all[p].split()
 
             line_list_FG = [line_list_pre_FG[0]]
@@ -51,7 +51,6 @@ for i in range(15):
         #存
         #FG_filename_new = f'P{i:02}\\P{i:02}_new.txt'
         #file_path_FG_new = os.path.join(folder_path_FG,FG_filename_new)
-        #最后处理FG annotation的第一位位置
         line_list_FG[0] = f'p{i:02}/'+line_list_FG[0]
         line_list_FG_str = ' '.join(line_list_FG)
 
@@ -62,7 +61,6 @@ for w in range(15):
     #FG_filename_plt = f'p{w:02}\\p{w:02}_new.txt'
     #FG_addname_plt = f'p{w:02}'
     #file_path_FG_plt = os.path.join(folder_path_FG,FG_filename_plt)
-    #一个文件就不用到处找文件在哪了。
     with open(save_file_path_FG,'r') as file:
         lines_FG_all_plt = file.readlines()
     for o in range(len(lines_FG_all_plt)):
