@@ -2,13 +2,25 @@ import numpy as np
 import random
 import copy
 import cv2
+
 #rescale_hyperparam
-rescale_min = 0.8
-rescale_max = 1.2
+RESCALE_MIN = 0.8
+RESCALE_MAX = 1.2
+IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
+
+def resize(image, target_size):
+    raise NotImplementedError
+
+
+def normalization(image):
+    raise NotImplementedError
+
 
 #here the image and keypoints will be only for one image.
 def rescale(image, labels):
-    rescale_factor = random.uniform(rescale_min,rescale_max)
+    rescale_factor = random.uniform(RESCALE_MIN, RESCALE_MAX)
     #find center
     cent_x = image.shape[0]//2
     cent_y = image.shape[1]//2
@@ -64,9 +76,6 @@ def shift(image, labels):
 
 
     return image,return_keypt
-    return image,return_label
-
-
 
 
 def rotate(image, labels):

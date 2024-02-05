@@ -4,23 +4,24 @@ class Facegaze(Dataset):
     def __init__(self)
 '''
 import torch
-from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import os
-from data_utils import data_augmentation
-#initialization for hyperparameters
-scale_factor = 20 #factor between input image and heatmap resolution.
-sigma = 4 # sigma parameter for quadratic gaussian distribution heatmap
+from data_utils import data_augmentation, normalization, resize
+
+# initialization for hyperparameters
+INPUT_SIZE = (640, 360)  # input dimension.
+SCALE_FACTOR = 4  # factor between input image and heatmap resolution.
+SIGMA = 4  # sigma parameter for quadratic gaussian distribution heatmap
+
 
 class CustomDataset(Dataset):
     def __init__(self):
         # initialize
-        self.data_paths = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze/annotationOverall.txt"
-        self.folder_path = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze"
+        self.data_paths = "/Users/shuangliu/PycharmProjects/Rec_Project/MPIIFaceGaze/annotationOverall.txt"
+        self.folder_path = "/Users/shuangliu/Downloads/data/MPIIFaceGaze"
         self.data = self.read_txt(self.data_paths)
 
     def __len__(self):
@@ -31,15 +32,19 @@ class CustomDataset(Dataset):
         # find the correlated image and keypoint.
         line = self.data[idx]
         image_path, keypoints = line.split(' ', 1)
-        image_id_path = os.path.join(self.folder_path,image_path)
+        image_id_path = os.path.join(self.folder_path, image_path)
         image = self.load_image(image_id_path)
         keypoints = [float(coord) for coord in keypoints.split()]
 
+        # TODO: resize the image to INPUT_SIZE and change keypoints coordinaly.
+        image, keypoint = resize(image, INPUT_SIZE)
+
         #data augmentation (only change those not have -1)
-        if -1 not in keypoints:
-            image,keypoints = data_augmentation(image,keypoints,options = ["rescaling"])  #choose one as test.
+        # if -1 not in keypoints:
+        image, keypoints = data_augmentation(image, keypoints, options=["rescaling"])  # choose one as test.
 
-
+        # TODO: normalize image with ImageNet Mean and Std
+        image = normalization(image)
         # return
         return image, keypoints
 
@@ -104,11 +109,11 @@ def collate_fn(batch):
             if x == -1 and y == -1:
                 # mask = 0 if -1 exist in the keypoint
                 mask_per_sample.append(0)
-                heatmap_per_sample.append(np.zeros((image_shape[0] // scale_factor, image_shape[1] // scale_factor)))  #append heatmap size
+                heatmap_per_sample.append(np.zeros((image_shape[0] // SCALE_FACTOR, image_shape[1] // SCALE_FACTOR)))  #append heatmap size
             else:
                 mask_per_sample.append(1)
                 # generate heatmap
-                heatmap = generate_gaussian_heatmap(x, y,image_shape = image_shape,scale_factor = scale_factor)
+                heatmap = generate_gaussian_heatmap(x, y, image_shape = image_shape, scale_factor = SCALE_FACTOR)
                 heatmap_per_sample.append(heatmap)
 
         heatmaps.append(heatmap_per_sample)
