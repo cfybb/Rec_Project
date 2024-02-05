@@ -55,6 +55,7 @@ for i in range(15):
         line_list_FG_str = ' '.join(line_list_FG)
 
         with open(save_file_path_FG,'a') as file:
+            # here is why we have a empty line in the txt.
             file.write('\n'+line_list_FG_str)
 '''
 for w in range(15):

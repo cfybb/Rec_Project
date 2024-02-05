@@ -35,6 +35,11 @@ class CustomDataset(Dataset):
         image = self.load_image(image_id_path)
         keypoints = [float(coord) for coord in keypoints.split()]
 
+        #data augmentation (only change those not have -1)
+        if -1 not in keypoints:
+            image,keypoints = data_augmentation(image,keypoints,options = ["rescaling"])  #choose one as test.
+
+
         # return
         return image, keypoints
 
@@ -76,8 +81,8 @@ def collate_fn(batch):
     images, labels = zip(*batch)
     #print(size(images),size(labels))
 
-    #data augmentation
-    images, labels = data_augmentation(images, labels,options = ['rescaling','shifting']) #only do two, just in case.
+    #data augmentation   not here
+    #images, labels = data_augmentation(images, labels,options = ['rescaling','shifting']) #only do two, just in case.
 
     images = torch.FloatTensor(np.array(images, dtype=np.float32))
     images = torch.permute(images, (0, 3, 1, 2))
