@@ -58,7 +58,6 @@ def shift(image, labels):
     for i in range(0, len(final_points_flat_list), 2):
         x, y = final_points_flat_list[i], final_points_flat_list[i + 1]
         if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
-            return_keypt.extend([x, y])
         else:
             return_keypt.extend([-1, -1])
 
@@ -92,12 +91,20 @@ def rotate(image, labels):
 
     # rotate labels
     #transform
+
     points_array = np.array(labels).reshape(-1, 2) #N*2
     center = (image.shape[0] // 2, image.shape[1] // 2)
     rotation_matrix = cv2.getRotationMatrix2D(center, rotation_angle, 1)
-    rotated_points_array = cv2.transform(np.array([points_array]), rotation_matrix).squeeze()
-    return_labels = rotated_points_array.flatten().tolist()
+    rotated_points_array = []
 
+
+    for points in points_array:
+        if np.all(point == [-1,-1]):
+            rotated_points_array.append(point)
+        else:
+            rotated_point = cv2.transform(np.array([point]),rotation_matrix).squeeze()
+            rotated_point_array.append(rotated_point)
+    return_labels = rotated_points_array.flatten().tolist()
     return rotated_image, return_labels
 
 def saturation(image,labels):

@@ -36,8 +36,9 @@ class CustomDataset(Dataset):
         keypoints = [float(coord) for coord in keypoints.split()]
 
         #data augmentation (only change those not have -1)
-        if -1 not in keypoints:
-            image,keypoints = data_augmentation(image,keypoints,options = ["rescaling"])  #choose one as test.
+        #if -1 not in keypoints:
+        # need to adjust in augmentation.
+        image,keypoints = data_augmentation(image,keypoints,options = ["rescaling"])  #choose one as test.
 
 
         # return
