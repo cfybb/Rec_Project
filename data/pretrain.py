@@ -8,7 +8,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import os
 from data_utils import data_augmentation
@@ -59,22 +59,28 @@ class CustomDataset(Dataset):
 def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     """
     gaussian heatmap
+    To maintain the precision of coordinates, we keep x, y as floating number.
     """
     heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
-    x, y = int(x//scale_factor), int(y//scale_factor)
+    # x, y = int(x//scale_factor), int(y//scale_factor)
+    x /= scale_factor
+    y /= scale_factor
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
 
-    x_coords = np.arange(0, heatmap_size[1], 1)
-    y_coords = np.arange(0, heatmap_size[0], 1)
+    # x_coords = np.arange(0, heatmap_size[1], 1)
+    # y_coords = np.arange(0, heatmap_size[0], 1)
+
+    x_coords = np.arange(0, heatmap_size[0], 1)
+    y_coords = np.arange(0, heatmap_size[1], 1)
     X, Y = np.meshgrid(x_coords, y_coords)
 
     pos = np.dstack((X, Y))
     rv = multivariate_normal(mean=[x, y], cov=sigma)
-    heatmap = rv.pdf(pos)
+    heatmap = rv.pdf(pos) * 2 * np.pi * sigma
 
     # normalize
-    heatmap = heatmap / np.max(heatmap)
+    # heatmap = heatmap
     return heatmap
 
 def collate_fn(batch):
