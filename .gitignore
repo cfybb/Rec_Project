@@ -1,0 +1,10 @@
+*.pyc
+
+# compiling files
+__pycache__
+__pycache__/*
+
+# pycharm temp files
+.idea
+.idea/*
+
