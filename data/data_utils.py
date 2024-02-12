@@ -58,6 +58,7 @@ def shift(image, labels):
     for i in range(0, len(final_points_flat_list), 2):
         x, y = final_points_flat_list[i], final_points_flat_list[i + 1]
         if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
+            return_keypt.extend([x, y])
         else:
             return_keypt.extend([-1, -1])
 
