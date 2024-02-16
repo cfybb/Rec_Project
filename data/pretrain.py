@@ -10,13 +10,15 @@ from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import os
 from data_utils import data_augmentation
 #initialization for hyperparameters
-scale_factor = 20 #factor between input image and heatmap resolution.
+scale_factor = 4 #factor between input image and heatmap resolution.
 sigma = 4 # sigma parameter for quadratic gaussian distribution heatmap
+
+# TODO: add input size
 
 class CustomDataset(Dataset):
     def __init__(self):
@@ -36,6 +38,10 @@ class CustomDataset(Dataset):
         image_id_path = os.path.join(self.folder_path,image_path)
         image = self.load_image(image_id_path)
         keypoints = [float(coord) for coord in keypoints.split()]
+
+        # TODO: convert image/keypoints to input size
+        # image = cv2.resize(...)
+        # keypoints *= ...
 
         #data augmentation (only change those not have -1)
         #if -1 not in keypoints:
@@ -58,11 +64,38 @@ class CustomDataset(Dataset):
             data = file.readlines()
         return data[1:]    #first line is empty
 
+"""
+class SubDataset(Dataset):
+    def __init__(self, dataset, indices):
+        self.dataset = dataset
+        self.indices = indices
+        
+    def __len__(self):
+        return len(self.indices)
+    
+    def __getitem__(self, idx):
+        return self.dataset[indices[idx]]
+
+
+def random_split(dataset, dataset_sizes):
+    if sum(dataset_size) > len(dataset):
+        raise ValueError
+        
+    total_indices = list(range(len(dataset))
+    sub_datasets = []
+    for dataset_size in dataset_sizes:
+        sub_indices = random.sample(total_indices, dataset_size)
+        sub_datasets.append(SubDataset(dataset, sub_indices))
+        total_indices = list(set(total_indices) - set(sub_indices))
+    return sub_datasets
+"""
+
 def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     """
     gaussian heatmap
     """
     heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
+    # TODO: use fractional division
     x, y = x//scale_factor, y//scale_factor
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
@@ -76,6 +109,7 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     heatmap = rv.pdf(pos)
 
     # normalize
+    # TODO: update normalization
     heatmap = heatmap / np.max(heatmap)
     #print(heatmap.shape)
     return heatmap

@@ -24,7 +24,8 @@ full_dataset = pretrain.CustomDataset()
 
 train_size = int(0.8 * len(full_dataset))
 test_size = len(full_dataset) - train_size
-train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+# TODO: implement random_split
+train_dataset, val_dataset = random_split(full_dataset, [train_size, test_size])
 
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=pretrain.collate_fn)
@@ -53,12 +54,12 @@ for epoch in range(num_epochs):
         train_loss += loss.item()
 
         # train accuracy
-        _, predicted = torch.max(outputs, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+        # _, predicted = torch.max(outputs, 1)
+        # total += labels.size(0)
+        # correct += (predicted == labels).sum().item()
 
     train_loss /= len(train_dataloader)
-    train_accuracy = 100 * correct / total
+    # train_accuracy = 100 * correct / total
 
     # validate
     model.eval()
@@ -73,14 +74,18 @@ for epoch in range(num_epochs):
             val_loss += loss.item()
 
             # validate accuracy
-            _, predicted = torch.max(outputs, 1)
-            val_total += labels.size(0)
-            val_correct += (predicted == labels).sum().item()
+            # _, predicted = torch.max(outputs, 1)
+            # val_total += labels.size(0)
+            # val_correct += (predicted == labels).sum().item()
 
     val_loss /= len(val_dataloader)
-    val_accuracy = 100 * val_correct / val_total
+    # val_accuracy = 100 * val_correct / val_total
 
     # print
+    # TODO: print loss only
     print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.2f}%, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%')
+
+    # TODO: add tensorboard integration
+    # please refer to https://pytorch.org/tutorials/recipes/recipes/tensorboard_with_pytorch.html
 
 print('Training Finished.')

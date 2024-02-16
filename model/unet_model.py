@@ -8,7 +8,7 @@ sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Pr
 # from models.unet_parts import *
 from unet_parts import *
 DOWNSAMPLE_NUM = 4
-UPSAMPLE_NUM = 4
+UPSAMPLE_NUM = 2
 
 
 class UNet(nn.Module):
@@ -33,7 +33,9 @@ class UNet(nn.Module):
         # self.outc = (OutConv(64, n_classes))
         self.encoder = self._make_downsample_layers(64, DOWNSAMPLE_NUM)
         self.decoder = self._make_upsample_layers(in_channels=64*(2**DOWNSAMPLE_NUM), num_layers=UPSAMPLE_NUM)
+        # TODO: fix output channel
         self.outc = OutConv(64*2**(UPSAMPLE_NUM), n_classes)
+        # self.outc = OutConv(64 * 2 ** (DOWNSAMPLE_NUM - UPSAMPLE_NUM), n_classes)
         # TODO: add a sigmoid layer to apply (0, 1) constraint to the output
         self.sigmoid = nn.Sigmoid()
 
@@ -59,18 +61,29 @@ class UNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.inc(x)
+        x = self.inc(x)  # (N, 64, 720, 1280)
+        # TODO: append the first result
+        # self.recorder.append(x)
         for id, model in enumerate(self.encoder):
             x = model(x)
             if id < DOWNSAMPLE_NUM -1 :
                 self.recorder.append(x)
+
+        # recorder: [(N, 64, 720, 1280), (N, 128, 360, 640), (N, 256, 180, 320), (N, 512, 90, 160)]
         # forward will only run once, but to make sure the counter is reset properly, initialization will be here.
         # for record in self.recorder:
         #    print("recorder:",record.shape)
         for i, model_d in enumerate(self.decoder):
             print(len(self.recorder))
-            downsample_result = self.recorder[DOWNSAMPLE_NUM - i -2 ]
+            # TODO: fix the index
+            # downsample_result = self.recorder[DOWNSAMPLE_NUM - i -2 ]
+            downsample_result = self.recorder[-(i + 1)]
             x = model_d(x, downsample_result)
+            #
+            # i = 0: x.shape = (N, 1024, 45, 80), downsample_result.shape = (N, 512, 90, 160)
+            # i = 1: x.shape = (N, 512, 90, 160), downsample_result.shape = (N, 256, 180, 320)
+            # i = 2: x.shape = (N, 256, 180, 320), downsample_result.shape = (N, 128, 360, 640)
+            # i = 3: x.shape = (N, 128, 360, 640), downsample_result.shape = (N, 64, 720, 1280)
         x = self.outc(x)
         logits = self.sigmoid(x)
         return logits
