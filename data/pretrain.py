@@ -3,6 +3,8 @@ from torch.utils.data import Dataset, DataLoader
 class Facegaze(Dataset):
     def __init__(self)
 '''
+import sys
+sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Project/data')
 import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
@@ -61,7 +63,7 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     gaussian heatmap
     """
     heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
-    x, y = int(x//scale_factor), int(y//scale_factor)
+    x, y = x//scale_factor, y//scale_factor
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
 
@@ -75,6 +77,7 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
 
     # normalize
     heatmap = heatmap / np.max(heatmap)
+    #print(heatmap.shape)
     return heatmap
 
 def collate_fn(batch):
@@ -85,7 +88,8 @@ def collate_fn(batch):
     #data augmentation   not here
     #images, labels = data_augmentation(images, labels,options = ['rescaling','shifting']) #only do two, just in case.
 
-    images = torch.FloatTensor(np.array(images, dtype=np.float32))
+    images = [torch.FloatTensor(image/255.0) for image in images]
+    images = torch.stack(images)
     images = torch.permute(images, (0, 3, 1, 2))
     image_shape = (images.shape[2], images.shape[3])
 

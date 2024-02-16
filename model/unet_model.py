@@ -2,11 +2,13 @@
 UNet Implementation from https://github.com/milesial/Pytorch-UNet/blob/master/unet, with minor adjustments.
 Full assembly of the parts to form the complete network
 """
+import sys
 
+sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Project/model')
 # from models.unet_parts import *
 from unet_parts import *
 DOWNSAMPLE_NUM = 4
-UPSAMPLE_NUM = 2
+UPSAMPLE_NUM = 4
 
 
 class UNet(nn.Module):

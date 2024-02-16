@@ -19,20 +19,19 @@ num_epochs = 10
 batch_size = 4
 learning_rate = 0.001
 
-# dateset train/validation
-train_data_paths = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze/train_annotationOverall.txt"
-train_folder_path = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze"
-train_dataset = CustomDataset(train_data_paths, train_folder_path)
 
-val_data_paths = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze/val_annotationOverall.txt"
-val_folder_path = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze"
-val_dataset = CustomDataset(val_data_paths, val_folder_path)
+full_dataset = pretrain.CustomDataset()
 
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+train_size = int(0.8 * len(full_dataset))
+test_size = len(full_dataset) - train_size
+train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+
+
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=pretrain.collate_fn)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size)
 
 # initialization
-model = UNet(n_channels=3, n_classes=8).to(device)
+model = unet_model.UNet(n_channels=3, n_classes=8).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 criterion = nn.MSELoss()
 
@@ -44,7 +43,8 @@ for epoch in range(num_epochs):
     correct = 0
     total = 0
     for batch in train_dataloader:
-        images, labels = batch['images'].to(device), batch['heatmaps'].to(device)
+        print(type(batch))
+        images, labels = batch["images"].to(device), batch["heatmaps"].to(device)  # 0 for iamge, 1 for heatmap
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)
