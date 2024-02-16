@@ -2,6 +2,7 @@ import numpy as np
 import random
 import copy
 import cv2
+
 #rescale_hyperparam
 rescale_min = 0.8
 rescale_max = 1.2
@@ -12,8 +13,24 @@ def rescale(image, labels):
     #find center
     cent_x = image.shape[0]//2
     cent_y = image.shape[1]//2
+    target_x = image.shape[0]
+    target_y = image.shape[1]
     #resize
     image = cv2.resize(image, None, fx = rescale_factor, fy = rescale_factor)
+    org_y,org_x,_ = image.shape
+    top = (target_x-org_x) // 2
+    bottom = target_x-org_x-top
+    left = (target_y-org_y) // 2
+    right = target_y-org_y-left
+    if top >= 0 and bottom >= 0 and left >= 0 and right >= 0:
+        image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        print("small",image.shape)
+    else:
+        image = cv2.getRectSubPix(image, (target_x, target_y), (cent_x, cent_y))
+        print("large",image.shape)
+
+
+
 
     #center coorp for labels (for now I will assume it is center-based)
     keypt_pair = [(labels[i], labels[i+1]) for i in range(0, len(labels), 2)]
@@ -31,6 +48,7 @@ def rescale(image, labels):
         x, y = final_points_flat_list[i], final_points_flat_list[i + 1]
         if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
             return_keypt.extend([x, y])
+
         else:
             return_keypt.extend([-1, -1])
 
@@ -58,12 +76,13 @@ def shift(image, labels):
     for i in range(0, len(final_points_flat_list), 2):
         x, y = final_points_flat_list[i], final_points_flat_list[i + 1]
         if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
+            return_keypt.extend([x, y])
         else:
             return_keypt.extend([-1, -1])
 
 
     return image,return_keypt
-    return image,return_label
+    #return image,return_label
 
 
 
@@ -159,3 +178,4 @@ def data_augmentation(images, labels, options=["rescaling", "shifting", "rotatio
         elif augment_option == "random noise":
             images, labels = random_Noise(images, labels)
     return images, labels
+

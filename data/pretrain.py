@@ -8,19 +8,19 @@ from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import os
-from data_utils import data_augmentation
+import random
+from data.data_utils import data_augmentation
 #initialization for hyperparameters
-scale_factor = 20 #factor between input image and heatmap resolution.
+scale_factor = 8 #factor between input image and heatmap resolution.
 sigma = 4 # sigma parameter for quadratic gaussian distribution heatmap
 
 class CustomDataset(Dataset):
     def __init__(self):
         # initialize
-        self.data_paths = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze/annotationOverall.txt"
-        self.folder_path = "C:/prdue/job_preperation_general/support_company/project/MPIIFaceGaze"
+        self.data_paths = "/home/shuangliu/Rec_Project/MPIIFaceGaze/annotationOverall.txt"
+        self.folder_path = "/home/shuangliu/MPIIFaceGaze"
         self.data = self.read_txt(self.data_paths)
 
     def __len__(self):
@@ -56,12 +56,42 @@ class CustomDataset(Dataset):
             data = file.readlines()
         return data[1:]    #first line is empty
 
+
+class SubDataset(Dataset):
+    """
+    Generate a sub dataset from dataset, with the selected indices.
+    """
+    def __init__(self, dataset, indices):
+        self.dataset = dataset
+        self.indices = indices
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        return self.dataset[self.indices[idx]]
+
+
+def random_split(dataset, dataset_sizes):
+    if sum(dataset_sizes) > len(dataset):
+        raise ValueError(f"total size of all splitted datasets {dataset_sizes} is greater than the original dataset {len(dataset)}.")
+
+    sub_datasets = []
+    all_indices = list(range(len(dataset)))
+    for dataset_size in dataset_sizes:
+        sub_indices = random.sample(all_indices, dataset_size)
+        sub_datasets.append(SubDataset(dataset, sub_indices))
+        all_indices = list(set(all_indices) - set(sub_indices))
+
+    return sub_datasets
+
+
 def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     """
     gaussian heatmap
     """
     heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
-    x, y = int(x//scale_factor), int(y//scale_factor)
+    x, y = x//scale_factor, y//scale_factor
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
 
@@ -75,6 +105,7 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
 
     # normalize
     heatmap = heatmap / np.max(heatmap)
+    #print(heatmap.shape)
     return heatmap
 
 def collate_fn(batch):
@@ -85,7 +116,8 @@ def collate_fn(batch):
     #data augmentation   not here
     #images, labels = data_augmentation(images, labels,options = ['rescaling','shifting']) #only do two, just in case.
 
-    images = torch.FloatTensor(np.array(images, dtype=np.float32))
+    images = [torch.FloatTensor(image/255.0) for image in images]
+    images = torch.stack(images)
     images = torch.permute(images, (0, 3, 1, 2))
     image_shape = (images.shape[2], images.shape[3])
 
