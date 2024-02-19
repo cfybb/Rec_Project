@@ -10,23 +10,23 @@ rescale_max = 1.2
 def rescale(image, labels):
     rescale_factor = random.uniform(rescale_min,rescale_max)
     #find center
-    cent_x = image.shape[0]//2
-    cent_y = image.shape[1]//2
-    target_x = image.shape[0]
-    target_y = image.shape[1]
+    cent_x = image.shape[1]//2
+    cent_y = image.shape[0]//2
+    target_x = image.shape[1]
+    target_y = image.shape[0]
     #resize
     image = cv2.resize(image, None, fx = rescale_factor, fy = rescale_factor)
     org_y,org_x,_ = image.shape
-    top = (target_x-org_x) // 2
-    bottom = target_x-org_x-top
-    left = (target_y-org_y) // 2
-    right = target_y-org_y-left
+    top = (target_y-org_y) // 2
+    bottom = target_y-org_y-top
+    left = (target_x-org_x) // 2
+    right = target_x-org_x-left
     if top >= 0 and bottom >= 0 and left >= 0 and right >= 0:
         image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-        print("small",image.shape)
+        # print("small",image.shape)
     else:
         image = cv2.getRectSubPix(image, (target_x, target_y), (cent_x, cent_y))
-        print("large",image.shape)
+        # print("large",image.shape)
 
 
 
@@ -59,37 +59,38 @@ def rescale(image, labels):
 
 def shift(image, labels):
     #limit
-    shift_max_x = image.shape[0]//2
-    shift_max_y = image.shape[1]//2
+    shift_max_x = image.shape[1]//2
+    shift_max_y = image.shape[0]//2
     #shift random
     shift_x = random.randint(0,shift_max_x)
     shift_y = random.randint(0,shift_max_y)
     #shift matrix
-    trans_mat = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
+    trans_mat = np.float32([[0, 1, shift_x], [1, 0, shift_y]])
     image = cv2.warpAffine(image,trans_mat,(image.shape[1], image.shape[0]))
-    #labels
+    # print(image.shape)
+    # labels
     shifted_points = [(x + shift_x, y + shift_y) for x, y in zip(labels[0::2], labels[1::2])]
     final_points_flat_list = [coord for pair in shifted_points for coord in pair]
-    #check if the point is out of range (only work for enlarge)
+    # check if the point is out of range (only work for enlarge)
     return_keypt = []
     for i in range(0, len(final_points_flat_list), 2):
         x, y = final_points_flat_list[i], final_points_flat_list[i + 1]
-        if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
+        if 0 <= x <= image.shape[1] and 0 <= y <= image.shape[0]:
             return_keypt.extend([x, y])
         else:
             return_keypt.extend([-1, -1])
 
 
     return image,return_keypt
-    #return image,return_label
+    # return image,return_label
 
 
 
 
 def rotate(image, labels):
-    #raise NotImplemented
-    #return_images = copy.deepcopy(list(images))
-    #return_labels = copy.deepcopy(list(labels))
+    # raise NotImplemented
+    # return_images = copy.deepcopy(list(images))
+    # return_labels = copy.deepcopy(list(labels))
 
 
 
@@ -111,24 +112,34 @@ def rotate(image, labels):
     #transform
 
     points_array = np.array(labels).reshape(-1, 2) #N*2
-    center = (image.shape[0] // 2, image.shape[1] // 2)
+    center = (image.shape[1] // 2, image.shape[0] // 2)
     rotation_matrix = cv2.getRotationMatrix2D(center, rotation_angle, 1)
     rotated_points_array = []
 
 
     for points in points_array:
-        if np.all(point == [-1,-1]):
-            rotated_points_array.append(point)
+        if np.all(points == [-1,-1]):
+            rotated_points_array.append(points)
         else:
-            rotated_point = cv2.transform(np.array([point]),rotation_matrix).squeeze()
-            rotated_point_array.append(rotated_point)
-    return_labels = rotated_points_array.flatten().tolist()
-    return rotated_image, return_labels
+            rotated_point = cv2.transform(np.array([np.array([points])]),rotation_matrix).squeeze()
+            rotated_points_array.append(rotated_point)
+    rotated_points_array = np.array(rotated_points_array)
+    rotated_point_list = rotated_points_array.flatten().tolist()
+    return_keypt = []
+    for i in range(0, len(rotated_point_list), 2):
+        x, y = rotated_point_list[i], rotated_point_list[i + 1]
+        if 0 <= x <= image.shape[1] and 0 <= y <= image.shape[0]:
+            return_keypt.extend([x, y])
+        else:
+            return_keypt.extend([-1, -1])
+
+
+    return rotated_image, return_keypt
 
 def saturation(image,labels):
-    #raise NotImplemented
-    #return_images = copy.deepcopy(list(images))
-    #return_labels = copy.deepcopy(list(labels))
+    # raise NotImplemented
+    # return_images = copy.deepcopy(list(images))
+    # return_labels = copy.deepcopy(list(labels))
 
     # saturation range
     saturation_factor = np.random.uniform(0.5, 1.5)  #sample

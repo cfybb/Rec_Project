@@ -11,20 +11,20 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from model import unet_model
 from data import pretrain
-
-
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data.dataset import random_split
 # initilization
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 num_epochs = 10
 batch_size = 4
 learning_rate = 0.001
-
+writer = SummaryWriter()
 
 full_dataset = pretrain.CustomDataset()
 
 train_size = int(0.8 * len(full_dataset))
 test_size = len(full_dataset) - train_size
-train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
+train_dataset, val_dataset = random_split(full_dataset, [train_size, test_size])
 
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=pretrain.collate_fn)
@@ -43,7 +43,7 @@ for epoch in range(num_epochs):
     correct = 0
     total = 0
     for batch in train_dataloader:
-        print(type(batch))
+        # print(type(batch))
         images, labels = batch["images"].to(device), batch["heatmaps"].to(device)  # 0 for iamge, 1 for heatmap
         optimizer.zero_grad()
         outputs = model(images)
@@ -51,14 +51,8 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
-
-        # train accuracy
-        _, predicted = torch.max(outputs, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
-
     train_loss /= len(train_dataloader)
-    train_accuracy = 100 * correct / total
+    writer.add_scalar("Loss/train", train_loss, epoch)
 
     # validate
     model.eval()
@@ -72,15 +66,11 @@ for epoch in range(num_epochs):
             loss = criterion(outputs, labels)
             val_loss += loss.item()
 
-            # validate accuracy
-            _, predicted = torch.max(outputs, 1)
-            val_total += labels.size(0)
-            val_correct += (predicted == labels).sum().item()
-
     val_loss /= len(val_dataloader)
-    val_accuracy = 100 * val_correct / val_total
+    writer.add_scalar("Loss/train", val_loss, epoch)
 
     # print
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.2f}%, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%')
+    print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
+writer.flush()
 
 print('Training Finished.')

@@ -8,7 +8,7 @@ sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Pr
 # from models.unet_parts import *
 from unet_parts import *
 DOWNSAMPLE_NUM = 4
-UPSAMPLE_NUM = 4
+UPSAMPLE_NUM = 2
 
 
 class UNet(nn.Module):
@@ -33,7 +33,7 @@ class UNet(nn.Module):
         # self.outc = (OutConv(64, n_classes))
         self.encoder = self._make_downsample_layers(64, DOWNSAMPLE_NUM)
         self.decoder = self._make_upsample_layers(in_channels=64*(2**DOWNSAMPLE_NUM), num_layers=UPSAMPLE_NUM)
-        self.outc = OutConv(64*2**(UPSAMPLE_NUM), n_classes)
+        self.outc = OutConv(64*2**(DOWNSAMPLE_NUM - UPSAMPLE_NUM), n_classes)
         # TODO: add a sigmoid layer to apply (0, 1) constraint to the output
         self.sigmoid = nn.Sigmoid()
 
@@ -46,13 +46,13 @@ class UNet(nn.Module):
             self.factor = 2 if self.bilinear and num_layers == DOWNSAMPLE_NUM else 1
             layers.append(Down(in_channels, in_channels*2 // self.factor))
             in_channels = in_channels*2//self.factor
-            print("in_channels for down",in_channels)
+            # print("in_channels for down",in_channels)
         return nn.Sequential(*layers)
 
     def _make_upsample_layers(self, in_channels, num_layers):
         layers = []
         for _ in range(num_layers):
-            print("in_channels for up",in_channels)
+            # print("in_channels for up",in_channels)
             # print("self factor for up",self.factor)
             layers.append(Up(in_channels, (in_channels // 2)//self.factor, self.bilinear))
             in_channels = (in_channels//2)//self.factor
@@ -61,16 +61,23 @@ class UNet(nn.Module):
     def forward(self, x):
         x = self.inc(x)
         for id, model in enumerate(self.encoder):
-            x = model(x)
-            if id < DOWNSAMPLE_NUM -1 :
+            if id <= DOWNSAMPLE_NUM -1 :
                 self.recorder.append(x)
+                # print(self.recorder[id].shape)
+            x = model(x)
+
+
         # forward will only run once, but to make sure the counter is reset properly, initialization will be here.
         # for record in self.recorder:
         #    print("recorder:",record.shape)
         for i, model_d in enumerate(self.decoder):
-            print(len(self.recorder))
-            downsample_result = self.recorder[DOWNSAMPLE_NUM - i -2 ]
+            # print(len(self.recorder))
+            downsample_result = self.recorder[-(i + 1)]   ###############################################有问题
+            # print("down shape", downsample_result.shape)
+            # print("x shape", x.shape)
             x = model_d(x, downsample_result)
+
+
         x = self.outc(x)
         logits = self.sigmoid(x)
         return logits

@@ -15,8 +15,10 @@ from scipy.stats import multivariate_normal
 import os
 from data_utils import data_augmentation
 #initialization for hyperparameters
-scale_factor = 20 #factor between input image and heatmap resolution.
+scale_factor = 4 #factor between input image and heatmap resolution.
 sigma = 4 # sigma parameter for quadratic gaussian distribution heatmap
+#add input size
+input_x,input_y = 1280,720  #  might change here.
 
 class CustomDataset(Dataset):
     def __init__(self):
@@ -35,12 +37,20 @@ class CustomDataset(Dataset):
         image_path, keypoints = line.split(' ', 1)
         image_id_path = os.path.join(self.folder_path,image_path)
         image = self.load_image(image_id_path)
+        # find origional shape
+        org_x, org_y = image.shape[1], image.shape[0]
+        # print("org_x",org_x)
+        # print("org_y",org_y)
+        # ratio of the change.
+        rat_x = input_x / org_x
+        rat_y = input_y / org_y
         keypoints = [float(coord) for coord in keypoints.split()]
+        # TODO: convert image/keypoints to input size
+        image = cv2.resize(image,(input_x,input_y))
+        keypoints = resize_keypoint_input(keypoints,rat_x,rat_y)
 
         #data augmentation (only change those not have -1)
-        #if -1 not in keypoints:
-        # need to adjust in augmentation.
-        image,keypoints = data_augmentation(image,keypoints,options = ["rescaling"])  #choose one as test.
+        image,keypoints = data_augmentation(image,keypoints,options = ["rescaling", "shifting", "rotation", "saturation", "random noise"])  #choose one as test.
 
 
         # return
@@ -57,13 +67,13 @@ class CustomDataset(Dataset):
         with open(txt_path, 'r') as file:
             data = file.readlines()
         return data[1:]    #first line is empty
-
+####################################################################################
 def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     """
     gaussian heatmap
     """
     heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
-    x, y = x//scale_factor, y//scale_factor
+    x, y = x/scale_factor, y/scale_factor
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
 
@@ -76,10 +86,10 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     heatmap = rv.pdf(pos)
 
     # normalize
-    heatmap = heatmap / np.max(heatmap)
+    heatmap = (heatmap / np.max(heatmap))*2*np.pi*sigma**2
     #print(heatmap.shape)
     return heatmap
-
+#####################################################################################
 def collate_fn(batch):
     #image, label
     images, labels = zip(*batch)
@@ -124,7 +134,8 @@ def collate_fn(batch):
 
     return {'images': images, 'heatmaps': heatmaps, 'masks': masks}
 
-
+def resize_keypoint_input(keypoints,rat_x,rat_y):
+    return [keypoints[i] * rat_x if i % 2 == 0 else keypoints[i] * rat_y for i in range(len(keypoints))]
 
 #validation check
 if __name__ == "__main__":
