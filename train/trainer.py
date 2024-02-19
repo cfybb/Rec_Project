@@ -37,6 +37,7 @@ criterion = nn.MSELoss()
 
 # train and validate
 for epoch in range(num_epochs):
+    torch.cuda.empty_cache()
     # train
     model.train()
     train_loss = 0.0
@@ -67,7 +68,7 @@ for epoch in range(num_epochs):
             val_loss += loss.item()
 
     val_loss /= len(val_dataloader)
-    writer.add_scalar("Loss/train", val_loss, epoch)
+    writer.add_scalar("Loss/val", val_loss, epoch)
 
     # print
     print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
