@@ -14,11 +14,12 @@ import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import os
 from data_utils import data_augmentation
-#initialization for hyperparameters
-scale_factor = 4 #factor between input image and heatmap resolution.
-sigma = 4 # sigma parameter for quadratic gaussian distribution heatmap
-#add input size
-input_x,input_y = 1280,720  #  might change here.
+# initialization for hyperparameters
+scale_factor = 4  # factor between input image and heatmap resolution.
+sigma = 4  # sigma parameter for quadratic gaussian distribution heatmap
+# add input size
+input_x, input_y = 640, 360  # might change here.
+
 
 class CustomDataset(Dataset):
     def __init__(self):
@@ -35,7 +36,7 @@ class CustomDataset(Dataset):
         # find the correlated image and keypoint.
         line = self.data[idx]
         image_path, keypoints = line.split(' ', 1)
-        image_id_path = os.path.join(self.folder_path,image_path)
+        image_id_path = os.path.join(self.folder_path, image_path)
         image = self.load_image(image_id_path)
         # find origional shape
         org_x, org_y = image.shape[1], image.shape[0]
@@ -46,12 +47,12 @@ class CustomDataset(Dataset):
         rat_y = input_y / org_y
         keypoints = [float(coord) for coord in keypoints.split()]
         # TODO: convert image/keypoints to input size
-        image = cv2.resize(image,(input_x,input_y))
-        keypoints = resize_keypoint_input(keypoints,rat_x,rat_y)
+        image = cv2.resize(image, (input_x, input_y))
+        keypoints = resize_keypoint_input(keypoints, rat_x, rat_y)
 
-        #data augmentation (only change those not have -1)
-        image,keypoints = data_augmentation(image,keypoints,options = ["rescaling", "shifting", "rotation", "saturation", "random noise"])  #choose one as test.
-
+        # data augmentation (only change those not have -1)
+        # print("super origion keypoints",keypoints)
+        image, keypoints = data_augmentation(image, keypoints, options=["rescaling", "shifting", "rotation", "saturation", "random noise"])  # choose one as test.
 
         # return
         return image, keypoints
@@ -61,18 +62,20 @@ class CustomDataset(Dataset):
 
         image = cv2.imread(path)
 
-        return(image)
+        return (image)
 
-    def read_txt(self,txt_path):
+    def read_txt(self, txt_path):
         with open(txt_path, 'r') as file:
             data = file.readlines()
-        return data[1:]    #first line is empty
-####################################################################################
+        return data[1:]  # first line is empty
+##########################################################################
+
+
 def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     """
     gaussian heatmap
     """
-    heatmap_size = (image_shape[0]//scale_factor,image_shape[1]//scale_factor)
+    heatmap_size = (image_shape[0]//scale_factor, image_shape[1]//scale_factor)
     x, y = x/scale_factor, y/scale_factor
     x = np.clip(x, 0, heatmap_size[1] - 1)
     y = np.clip(y, 0, heatmap_size[0] - 1)
@@ -87,24 +90,30 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
 
     # normalize
     heatmap = (heatmap / np.max(heatmap))*2*np.pi*sigma**2
-    #print(heatmap.shape)
+    # print(heatmap.shape)
     return heatmap
-#####################################################################################
+###########################################################################
+
+
 def collate_fn(batch):
-    #image, label
+    # image, label
     images, labels = zip(*batch)
-    #print(size(images),size(labels))
+    # print(size(images),size(labels))
+    # min_pixel_value = min(torch.min(torch.FloatTensor(image)) for image in images)
+    # max_pixel_value = max(torch.max(torch.FloatTensor(image)) for image in images)
 
-    #data augmentation   not here
-    #images, labels = data_augmentation(images, labels,options = ['rescaling','shifting']) #only do two, just in case.
-
+    # print("Min pixel value:", min_pixel_value)
+    # print("Max pixel value:", max_pixel_value)
+    # data augmentation   not here
+    # images, labels = data_augmentation(images, labels,options = ['rescaling', 'shifting']) #only do two, just in case.
     images = [torch.FloatTensor(image/255.0) for image in images]
     images = torch.stack(images)
-    images = torch.permute(images, (0, 3, 1, 2))
+    images = images.permute(0, 3, 1, 2)
+    # cv2.imshow("image check", (255.0*images[0].permute(1, 2, 0).numpy()).astype(np.uint8))
     image_shape = (images.shape[2], images.shape[3])
-
+    # print("Min pixel value:", images.min())
+    # print("Max pixel value:", images.max())
     # deal with image
-    #images = torch.stack(images)
 
     # deal with label
     heatmaps = []  # save heatmap
@@ -116,6 +125,8 @@ def collate_fn(batch):
 
         for i in range(0, len(label), 2):
             x, y = label[i], label[i + 1]
+            # print("x",x)
+            # print("y",y)
             if x == -1 and y == -1:
                 # mask = 0 if -1 exist in the keypoint
                 mask_per_sample.append(0)
@@ -123,7 +134,7 @@ def collate_fn(batch):
             else:
                 mask_per_sample.append(1)
                 # generate heatmap
-                heatmap = generate_gaussian_heatmap(x, y,image_shape = image_shape,scale_factor = scale_factor)
+                heatmap = generate_gaussian_heatmap(x, y, image_shape=image_shape, scale_factor=scale_factor)
                 heatmap_per_sample.append(heatmap)
 
         heatmaps.append(heatmap_per_sample)
@@ -131,19 +142,26 @@ def collate_fn(batch):
 
     heatmaps = torch.tensor(np.array(heatmaps, dtype=np.float32))
     masks = torch.tensor(masks)
+    masks = masks.unsqueeze(-1)
+    masks = masks.unsqueeze(-1)
 
     return {'images': images, 'heatmaps': heatmaps, 'masks': masks}
 
-def resize_keypoint_input(keypoints,rat_x,rat_y):
-    return [keypoints[i] * rat_x if i % 2 == 0 else keypoints[i] * rat_y for i in range(len(keypoints))]
 
-#validation check
+def resize_keypoint_input(keypoints, rat_x, rat_y):
+    return [keypoints[i] * rat_x if i % 2 == 0 and (keypoints[i] != -1 and keypoints[i+1] != -1) else
+            (keypoints[i] * rat_y if (keypoints[i] != -1 and keypoints[i-1] != -1) else keypoints[i]) for i in range(len(keypoints))]
+
+
+# validation check
 if __name__ == "__main__":
     dataset = CustomDataset()
-    print(dataset[0])
+    # print(dataset[0])
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=collate_fn)
     for batch in dataloader:
-        image = batch["images"][0].permute(1, 2, 0).numpy().astype(np.uint8)
+        image = (255.0*batch["images"][0].permute(1, 2, 0).numpy()).astype(np.uint8)         # TODO
+        # print("max of image",np.max(image))
+        # print("min of image", np.min(image))
         heatmap = batch["heatmaps"][0].permute(1, 2, 0).max(axis=-1).values.numpy()
         mask = batch["masks"][0]
         if mask[-1] == 0:
@@ -156,4 +174,3 @@ if __name__ == "__main__":
         key = cv2.waitKey(-1)
         if key == ord("q"):
             break
-

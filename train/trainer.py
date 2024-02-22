@@ -13,10 +13,11 @@ from model import unet_model
 from data import pretrain
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data.dataset import random_split
+from tqdm import tqdm
 # initilization
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 num_epochs = 10
-batch_size = 4
+batch_size = 16
 learning_rate = 0.001
 writer = SummaryWriter()
 
@@ -36,6 +37,7 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 criterion = nn.MSELoss()
 
 # train and validate
+train_i = 0
 for epoch in range(num_epochs):
     torch.cuda.empty_cache()
     # train
@@ -43,17 +45,25 @@ for epoch in range(num_epochs):
     train_loss = 0.0
     correct = 0
     total = 0
-    for batch in train_dataloader:
+
+    for batch in tqdm(train_dataloader):
         # print(type(batch))
-        images, labels = batch["images"].to(device), batch["heatmaps"].to(device)  # 0 for iamge, 1 for heatmap
+        images, labels, masks = batch["images"].to(device), batch["heatmaps"].to(device), batch["masks"].to(device)  # 0 for iamge, 1 for heatmap  #  mask?
         optimizer.zero_grad()
         outputs = model(images)
-        loss = criterion(outputs, labels)
+        # print("output", outputs.shape)
+        # print("labels",labels.shape)
+        # print("mask",masks.shape)
+        loss = criterion(outputs*masks, labels*masks)
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
+        # print("train No.",train_i)
+        train_i += 1
+        writer.add_scalar("Loss/train", loss.item(), train_i)
     train_loss /= len(train_dataloader)
-    writer.add_scalar("Loss/train", train_loss, epoch)
+
+
 
     # validate
     model.eval()
@@ -67,6 +77,7 @@ for epoch in range(num_epochs):
             loss = criterion(outputs, labels)
             val_loss += loss.item()
 
+
     val_loss /= len(val_dataloader)
     writer.add_scalar("Loss/val", val_loss, epoch)
 
@@ -75,3 +86,5 @@ for epoch in range(num_epochs):
 writer.flush()
 
 print('Training Finished.')
+
+# TODO: TQDM

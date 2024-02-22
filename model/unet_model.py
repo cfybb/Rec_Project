@@ -17,7 +17,7 @@ class UNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
-        self.recorder = []
+        # self.recorder = []
         self.factor = 0
 
         self.inc = (DoubleConv(n_channels, 64))
@@ -59,20 +59,19 @@ class UNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        recorder = []
         x = self.inc(x)
         for id, model in enumerate(self.encoder):
             if id <= DOWNSAMPLE_NUM -1 :
-                self.recorder.append(x)
+                recorder.append(x)
                 # print(self.recorder[id].shape)
             x = model(x)
-
-
         # forward will only run once, but to make sure the counter is reset properly, initialization will be here.
         # for record in self.recorder:
         #    print("recorder:",record.shape)
         for i, model_d in enumerate(self.decoder):
             # print(len(self.recorder))
-            downsample_result = self.recorder[-(i + 1)]   ###############################################有问题
+            downsample_result = recorder[-(i + 1)]   ###############################################有问题
             # print("down shape", downsample_result.shape)
             # print("x shape", x.shape)
             x = model_d(x, downsample_result)
@@ -91,7 +90,7 @@ class UNet(nn.Module):
 
 if __name__ == "__main__":
     unet = UNet(n_channels=3, n_classes=8)
-    #print(unet)
+    # print(unet)
     input = torch.rand([1, 3, 720, 1280], dtype=torch.float32)
     print("input shape", input.shape)
     output = unet(input)
