@@ -5,10 +5,10 @@ Full assembly of the parts to form the complete network
 import sys
 
 sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Project/model')
-# from models.unet_parts import *
-from unet_parts import *
+from model.unet_parts import *
+# from unet_parts import *
 DOWNSAMPLE_NUM = 4
-UPSAMPLE_NUM = 2
+UPSAMPLE_NUM = 4
 
 
 class UNet(nn.Module):
@@ -59,6 +59,7 @@ class UNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        self.recorder = []
         x = self.inc(x)
         for id, model in enumerate(self.encoder):
             if id <= DOWNSAMPLE_NUM -1 :
@@ -87,12 +88,3 @@ class UNet(nn.Module):
         self.encoder = torch.utils.checkpoint.checkpoint(self.encoder)
         self.decoder = torch.utils.checkpoint.checkpoint(self.decoder)
         self.outc = torch.utils.checkpoint.checkpoint(self.outc)
-
-
-if __name__ == "__main__":
-    unet = UNet(n_channels=3, n_classes=8)
-    #print(unet)
-    input = torch.rand([1, 3, 720, 1280], dtype=torch.float32)
-    print("input shape", input.shape)
-    output = unet(input)
-    print(output.shape)  # [1, 8, 720 * 2 ^ (UPSAMPLE - DOWNSAMPLE), 1280 * 2 ^ (UPSAMPLE - DOWNSAMPLE)]

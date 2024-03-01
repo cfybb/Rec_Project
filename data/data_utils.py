@@ -28,9 +28,6 @@ def rescale(image, labels):
         image = cv2.getRectSubPix(image, (target_x, target_y), (cent_x, cent_y))
         # print("large",image.shape)
 
-
-
-
     #center coorp for labels (for now I will assume it is center-based)
     keypt_pair = [(labels[i], labels[i+1]) for i in range(0, len(labels), 2)]
     #move
