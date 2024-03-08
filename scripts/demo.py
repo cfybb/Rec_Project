@@ -8,17 +8,21 @@ from utils.postprocess import heatmaps_to_keypoints
 
 if __name__ == "__main__":
     unet = UNet(n_channels=3, n_classes=8)
-    model = torch.load("model_epoch_9.th", map_location=torch.device("cpu"))
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = torch.load("model_epoch_7.th", map_location=device)
 
     cam = cv2.VideoCapture(0)
     while True:
         _, frame_orig = cam.read()
-        frame = cv2.resize(frame_orig, (320, 180))
+        print(frame_orig.shape)
+
+        frame = cv2.resize(frame_orig, (320, 240))
         frame = frame.astype(np.float32)
         input = [torch.FloatTensor(frame.astype(np.float32)/255.0)]
         input = torch.stack(input)
         input = torch.permute(input, (0, 3, 1, 2))
-        heatmap = model(input)
+        heatmap = model(input.to(device))
         heatmap = heatmap.detach().numpy()  # 1 x 8 x 180 x320
 
         # heatmap = heatmap[0].max(0)  # 180, 320
@@ -27,9 +31,8 @@ if __name__ == "__main__":
         #
         # frame_vis = (frame * 0.5 + heatmap_vis * 0.5).astype(np.uint8)
 
-
-        if heatmap[0][0].max() > 0.6:
-            keypoints = heatmaps_to_keypoints(heatmap, scale=4, threshold=0.3)
+        if heatmap.max() > 0.6:
+            keypoints = heatmaps_to_keypoints(heatmap, scale=2, threshold=0.3)
             for x, y in keypoints:
                 if x < 0 or y < 0:
                     continue
