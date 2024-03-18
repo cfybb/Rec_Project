@@ -18,7 +18,7 @@ from data_utils import data_augmentation
 scale_factor = 4  # factor between input image and heatmap resolution.
 sigma = 4  # sigma parameter for quadratic gaussian distribution heatmap
 # add input size
-input_x, input_y = 640, 360  # might change here.
+input_x, input_y = 320, 180  # might change here.
 
 
 class CustomDataset(Dataset):
@@ -71,7 +71,7 @@ class CustomDataset(Dataset):
 ##########################################################################
 
 
-def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
+def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=3.0):
     """
     gaussian heatmap
     """
@@ -89,7 +89,8 @@ def generate_gaussian_heatmap(x, y, image_shape, scale_factor, sigma=1.0):
     heatmap = rv.pdf(pos)
 
     # normalize
-    heatmap = (heatmap / np.max(heatmap))*2*np.pi*sigma**2
+    heatmap = (heatmap)*2*np.pi*sigma
+    # print(np.max(heatmap))
     # print(heatmap.shape)
     return heatmap
 ###########################################################################

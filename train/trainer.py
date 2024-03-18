@@ -29,12 +29,13 @@ train_dataset, val_dataset = random_split(full_dataset, [train_size, test_size])
 
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=pretrain.collate_fn)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size,collate_fn=pretrain.collate_fn)
 
 # initialization
 model = unet_model.UNet(n_channels=3, n_classes=8).to(device)
+# torch.save(model, 'C:/prdue/job_preperation_general/support_company/project/Rec_Project/model/Unet_train.pth')  # test
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-criterion = nn.MSELoss()
+criterion = nn.MSELoss(reduction="sum")
 
 # train and validate
 train_i = 0
@@ -83,6 +84,7 @@ for epoch in range(num_epochs):
 
     # print
     print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
+    torch.save(model, 'C:/prdue/job_preperation_general/support_company/project/Rec_Project/model/Unet_train_without_batchnorm.pth')
 writer.flush()
 
 print('Training Finished.')
