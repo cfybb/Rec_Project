@@ -7,8 +7,8 @@ import sys
 sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Project/model')
 # from models.unet_parts import *
 from unet_parts import *
-DOWNSAMPLE_NUM = 4
-UPSAMPLE_NUM = 2
+DOWNSAMPLE_NUM = 4  # 3
+UPSAMPLE_NUM = 2  # 1
 
 
 class UNet(nn.Module):
@@ -71,7 +71,7 @@ class UNet(nn.Module):
         #    print("recorder:",record.shape)
         for i, model_d in enumerate(self.decoder):
             # print(len(self.recorder))
-            downsample_result = recorder[-(i + 1)]   ###############################################有问题
+            downsample_result = recorder[-(i + 1)]
             # print("down shape", downsample_result.shape)
             # print("x shape", x.shape)
             x = model_d(x, downsample_result)
