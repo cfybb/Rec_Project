@@ -69,8 +69,9 @@ if __name__ == "__main__":
     inputs = np.array([data[0] for data in input_data])
     outputs = np.array([data[1] for data in input_data])
 
-    # Reshape inputs if needed (e.g., from a list of vectors to a 2D array)
+    # Reshape inputs and outputs if needed (e.g., from a list of vectors to a 2D array)
     inputs = inputs.reshape(-1, 1)  # Assuming each input is a single value
+    outputs = outputs.reshape(-1,1)
 
     # Perform linear regression
     matrix = LinearRegression().fit(inputs, outputs)
