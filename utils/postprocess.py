@@ -15,15 +15,19 @@ def heatmaps_to_keypoints(heatmaps, scale, threshold, neighbour=4):
 
 
     grid = np.array(range(2 * neighbour + 1), dtype=np.float32)
+    print("grid",grid)
     keypoints = []
     for i, (y, x) in enumerate(zip(*max_id)):
         print(heatmaps[i, y, x])
         print(x,y)
-        if heatmaps[i, y, x] < threshold or x < neighbour or x > width - neighbour or y < neighbour or y > height - neighbour:
+        if heatmaps[i, y, x] < threshold or x < neighbour or x >= width - neighbour or y < neighbour or y >= height - neighbour:
             keypoints.append((-1., -1.))
             continue
-        print("after clean",heatmaps[i, y, x])
+        # print("y scale", range(y-neighbour,y+neighbour+1))
+        # print("x scale", range(x-neighbour,x+neighbour+1))
         sub_heatmap = heatmaps[i, y-neighbour:y+neighbour+1, x-neighbour:x+neighbour+1]  # (2 * neighbour + 1,  2 * neighbour + 1)
+        # print("sub heatmap sum(1)",sub_heatmap.sum(1))
+        # print("heatmap",sub_heatmap)
         shift_x = (sub_heatmap.sum(0) * grid).sum() / sub_heatmap.sum() - neighbour  # weighted sum to get x coordinate with float precision
         shift_y = (sub_heatmap.sum(1) * grid).sum() / sub_heatmap.sum() - neighbour  # weighted sum to get y coordinate with float precision
         keypoints.append(((x + shift_x) * scale, (y + shift_y) * scale))

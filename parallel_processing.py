@@ -38,20 +38,21 @@ def processing_one(name, input_queue, output_queue):
 def postprocess_one(name, output_queue):
     (inc,camera_frame) = output_queue.get()
     print(f"{name}: postprocessing output_{inc}...")
-    keypoints = heatmaps_to_keypoints(inc,2,0.9)
-    # show the result
-    # camera_image = Image.open('camera_image.jpg')
-    # draw = ImageDraw.Draw(camera_image)
-    # for point in keypoints:
-        # draw.ellipse([point[0]-2, point[1]-2, point[0]+2, point[1]+2], fill='red', outline='red')
+    if inc.max() > 0.4:
+        keypoints = heatmaps_to_keypoints(inc,2,0.3)
+        # show the result
+        # camera_image = Image.open('camera_image.jpg')
+        # draw = ImageDraw.Draw(camera_image)
+        # for point in keypoints:
+            # draw.ellipse([point[0]-2, point[1]-2, point[0]+2, point[1]+2], fill='red', outline='red')
 
-    # Display the image with keypoints
-    # camera_image.show()
+        # Display the image with keypoints
+        # camera_image.show()
 
-    # cv2
-    for point_pair in keypoints:
-        (x, y) = point_pair
-        cv2.circle(camera_frame, (int(x), int(y)), 5, (0, 255, 0), -1)
+        # cv2
+        for point_pair in keypoints:
+            (x, y) = point_pair
+            cv2.circle(camera_frame, (int(x), int(y)), 5, (0, 255, 0), -1)
     return camera_frame
 
     # time.sleep(interval / 1000)
