@@ -3,12 +3,12 @@ import cv2
 import os
 import numpy as np
 import sys
-
+import pickle
 sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Project/utils')
 sys.path.append('C:/prdue/job_preperation_general/support_company/project/Rec_Project')
 from model.unet_model import UNet
 from utils.postprocess import heatmaps_to_keypoints
-
+from sklearn.linear_model import LinearRegression
 
 
 
@@ -79,6 +79,8 @@ if __name__ == "__main__":
     # Get the coefficients (transfer matrix) and intercept
     coefficients = matrix.coef_
     intercept = matrix.intercept_
+    with open('model_data.pkl', 'wb') as f:
+        pickle.dump((coefficients, intercept), f)
 
 
 

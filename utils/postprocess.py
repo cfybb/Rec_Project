@@ -15,11 +15,11 @@ def heatmaps_to_keypoints(heatmaps, scale, threshold, neighbour=4):
 
 
     grid = np.array(range(2 * neighbour + 1), dtype=np.float32)
-    print("grid",grid)
+    # print("grid",grid)
     keypoints = []
     for i, (y, x) in enumerate(zip(*max_id)):
-        print(heatmaps[i, y, x])
-        print(x,y)
+        # print(heatmaps[i, y, x])
+        # print(x,y)
         if heatmaps[i, y, x] < threshold or x < neighbour or x >= width - neighbour or y < neighbour or y >= height - neighbour:
             keypoints.append((-1., -1.))
             continue
