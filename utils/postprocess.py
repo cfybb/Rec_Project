@@ -31,5 +31,6 @@ def heatmaps_to_keypoints(heatmaps, scale, threshold, neighbour=4):
         shift_x = (sub_heatmap.sum(0) * grid).sum() / sub_heatmap.sum() - neighbour  # weighted sum to get x coordinate with float precision
         shift_y = (sub_heatmap.sum(1) * grid).sum() / sub_heatmap.sum() - neighbour  # weighted sum to get y coordinate with float precision
         keypoints.append(((x + shift_x) * scale, (y + shift_y) * scale))
+    keypoints = np.array(keypoints)
 
     return keypoints

@@ -1,7 +1,10 @@
 import torch
 import cv2
 import numpy as np
-
+import pickle
+import time
+from sklearn.linear_model import LinearRegression
+import pyautogui
 from model.unet_model import UNet
 from utils.postprocess import heatmaps_to_keypoints
 import sys
@@ -17,7 +20,7 @@ if __name__ == "__main__":
     cam = cv2.VideoCapture(0)
     while True:
         _, frame_orig = cam.read()
-        print(frame_orig.shape)
+        # print(frame_orig.shape)
 
         frame = cv2.resize(frame_orig, (320, 240))
         frame = frame.astype(np.float32)
@@ -40,7 +43,29 @@ if __name__ == "__main__":
                     continue
                 cv2.circle(frame_orig, (int(x), int(y)), 3, (0, 255, 0), -1)
 
+
+        # import the linear regression model and find the screen focus.
+        with open('model_data.pkl','rb') as file:
+            coefficients, intercept = pickle.load(file)
+        matrix = LinearRegression()
+        matrix.coef_ = coefficients
+        matrix.intercept_ = intercept
+        # print(len(keypoints))
+        print(keypoints)
+        focus = matrix.predict(keypoints.reshape(1,-1))
+        print(focus)
+        [[x,y]] = focus
         cv2.imshow("heatmap", frame_orig)
         key = cv2.waitKey(1)
         if key == ord("q"):
             break
+        x = max(100, min(x, 1820))
+        y = max(100, min(y, 980))
+        print(x,y)
+        # this is showing the face and keypoints.
+        # move mouse
+        pyautogui.moveTo(x, y)
+        pyautogui.click()  # show click
+        #wait
+        time.sleep(2)
+        pyautogui.click()  # close
